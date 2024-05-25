@@ -1,38 +1,44 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, Image, StyleSheet, Dimensions, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, Image, StyleSheet, Dimensions } from 'react-native';
 
 const WIDTH = Dimensions.get('window').width;
 const numColumns = 3;
 
-const PokemonItem = React.memo(({ item }) => (
-  <View style={styles.card}>
-    <Image
-      style={styles.image}
-      source={{ uri: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${item.id}.png` }}
-    />
-    <Text style={styles.title}>{item.name}</Text>
-  </View>
-));
+const PokemonItem = React.memo(({ item }) => {
+  const [description, setDescription] = useState('');
+
+  useEffect(() => {
+    const fetchDescription = async () => {
+      try {
+        const response = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${item.id}`);
+        const data = await response.json();
+        const flavorTextEntry = data.flavor_text_entries.find(entry => entry.language.name === 'en');
+        if (flavorTextEntry) {
+          setDescription(flavorTextEntry.flavor_text);
+        }
+      } catch (error) {
+        console.log("Hubo un error obteniendo la descripción del pokemon", error);
+      }
+    };
+
+    fetchDescription();
+  }, [item.id]);
+
+  return (
+    <View style={styles.card}>
+      <Image
+        style={styles.image}
+        source={{ uri: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${item.id}.png` }}
+      />
+      <Text style={styles.title}>{item.name}</Text>
+      <Text style={styles.description}>{description}</Text>
+    </View>
+  );
+});
 
 export default PokemonItem;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 50,
-  },
-  header: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    textAlign: 'center'
-  },
-  list: {
-    justifyContent: 'center',
-  },
   card: {
     backgroundColor: '#f8f8f8',
     borderRadius: 8,
@@ -53,11 +59,13 @@ const styles = StyleSheet.create({
     marginTop: 5,
     textTransform: 'capitalize',
   },
+  description: {
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 5,
+  },
   image: {
     width: 80,
     height: 80,
-  },
-  loading: {
-    marginTop: 20,
   },
 });
